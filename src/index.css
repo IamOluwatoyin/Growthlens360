@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    color: #07143f;
+    background: #f6f8fc;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  a {
+    text-decoration: none;
+  }
+}
+
+@layer components {
+  .page-wrap {
+    width: min(1180px, calc(100% - 32px));
+    margin-inline: auto;
+  }
+
+  .card {
+    background: white;
+    border: 1px solid #dfe6f1;
+    border-radius: 22px;
+    box-shadow: 0 12px 34px rgba(18, 38, 86, 0.06);
+  }
+
+  .eyebrow {
+    color: #e84632;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .field {
+    width: 100%;
+    border: 1px solid #cfd8e7;
+    background: white;
+    border-radius: 12px;
+    padding: 0.8rem 0.9rem;
+    outline: none;
+  }
+
+  .field:focus {
+    border-color: #ff5d49;
+    box-shadow: 0 0 0 3px rgba(255, 93, 73, 0.14);
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 0;
+    border-radius: 12px;
+    background: #ff5d49;
+    color: white;
+    padding: 0.82rem 1.15rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .btn-primary:hover {
+    background: #e84632;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid #193a80;
+    border-radius: 12px;
+    background: white;
+    color: #0a1d54;
+    padding: 0.78rem 1.1rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .btn-secondary:hover {
+    background: #eef5ff;
+  }
+}
+
+@media (max-width: 767px) {
+  .page-wrap {
+    width: min(100% - 24px, 560px);
+  }
+}
