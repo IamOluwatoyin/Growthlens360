@@ -14,13 +14,29 @@
   }
 
   html {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
     scroll-behavior: smooth;
   }
 
   body {
     margin: 0;
-    min-width: 320px;
+    width: 100%;
+    max-width: 100%;
     min-height: 100vh;
+    overflow-x: clip;
+  }
+
+  #root {
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: clip;
+  }
+
+  img,
+  svg {
+    max-width: 100%;
   }
 
   button,
@@ -38,6 +54,7 @@
 @layer components {
   .page-wrap {
     width: min(1180px, calc(100% - 32px));
+    min-width: 0;
     margin-inline: auto;
   }
 
@@ -109,6 +126,6 @@
 
 @media (max-width: 767px) {
   .page-wrap {
-    width: min(100% - 24px, 560px);
+    width: min(560px, calc(100% - 24px));
   }
 }

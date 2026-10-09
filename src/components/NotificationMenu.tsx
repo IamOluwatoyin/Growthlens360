@@ -12,7 +12,9 @@ import {
   useEffect,
   useRef,
   useState,
+  type MouseEvent,
 } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   deleteNotification,
@@ -24,8 +26,7 @@ import {
 
 function formatNotificationTime(value: string) {
   const date = new Date(value);
-  const now = new Date();
-  const difference = now.getTime() - date.getTime();
+  const difference = Date.now() - date.getTime();
 
   const minutes = Math.floor(difference / 60000);
   const hours = Math.floor(difference / 3600000);
@@ -61,7 +62,11 @@ function NotificationIcon({
 
 export function NotificationMenu() {
   const navigate = useNavigate();
-  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const buttonContainerRef =
+    useRef<HTMLDivElement | null>(null);
+
+  const panelRef = useRef<HTMLDivElement | null>(null);
 
   const [notifications, setNotifications] = useState<
     GrowthLensNotification[]
@@ -69,15 +74,20 @@ export function NotificationMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isMarkingAll, setIsMarkingAll] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [menuError, setMenuError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(
+    null,
+  );
+  const [menuError, setMenuError] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     let isMounted = true;
 
     const getNotifications = async () => {
       try {
-        const savedNotifications = await loadNotifications();
+        const savedNotifications =
+          await loadNotifications();
 
         if (isMounted) {
           setNotifications(savedNotifications);
@@ -105,11 +115,18 @@ export function NotificationMenu() {
   }, []);
 
   useEffect(() => {
-    const closeWhenClickingOutside = (event: MouseEvent) => {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(event.target as Node)
-      ) {
+    const closeWhenClickingOutside = (
+      event: globalThis.MouseEvent,
+    ) => {
+      const target = event.target as Node;
+
+      const clickedButton =
+        buttonContainerRef.current?.contains(target);
+
+      const clickedPanel =
+        panelRef.current?.contains(target);
+
+      if (!clickedButton && !clickedPanel) {
         setIsOpen(false);
       }
     };
@@ -126,6 +143,25 @@ export function NotificationMenu() {
       );
     };
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const closeWithEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", closeWithEscape);
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        closeWithEscape,
+      );
+    };
+  }, [isOpen]);
 
   const unreadCount = notifications.filter(
     (notification) => !notification.is_read,
@@ -168,7 +204,9 @@ export function NotificationMenu() {
   };
 
   const markAllAsRead = async () => {
-    if (unreadCount === 0 || isMarkingAll) return;
+    if (unreadCount === 0 || isMarkingAll) {
+      return;
+    }
 
     setIsMarkingAll(true);
     setMenuError(null);
@@ -197,7 +235,7 @@ export function NotificationMenu() {
   };
 
   const removeNotification = async (
-    event: React.MouseEvent<HTMLButtonElement>,
+    event: MouseEvent<HTMLButtonElement>,
     notificationId: string,
   ) => {
     event.stopPropagation();
@@ -225,12 +263,198 @@ export function NotificationMenu() {
     }
   };
 
+  const notificationPanel = (
+    <div
+      ref={panelRef}
+      className="
+        fixed inset-x-3 bottom-[calc(76px+env(safe-area-inset-bottom))]
+        top-[78px] z-[100] flex min-h-0 flex-col overflow-hidden
+        rounded-2xl border border-[#dfe6f1] bg-white
+        shadow-[0_22px_60px_rgba(7,20,63,.22)]
+        sm:inset-x-auto sm:bottom-auto sm:right-7
+        sm:h-auto sm:max-h-[520px] sm:w-[390px]
+      "
+      role="dialog"
+      aria-label="Notifications"
+    >
+      <div className="flex shrink-0 items-center justify-between border-b border-[#e4e9f2] px-4 py-4 sm:px-5">
+        <div className="min-w-0">
+          <h2 className="font-extrabold text-[#07143f]">
+            Notifications
+          </h2>
+
+          <p className="mt-1 truncate text-xs text-[#66729b]">
+            {unreadCount === 0
+              ? "You’re all caught up"
+              : `${unreadCount} unread notification${
+                  unreadCount === 1 ? "" : "s"
+                }`}
+          </p>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1">
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-[#1379f4] hover:bg-[#eef5ff] disabled:opacity-50"
+              onClick={() => void markAllAsRead()}
+              disabled={isMarkingAll}
+              aria-label="Mark all notifications as read"
+              title="Mark all as read"
+            >
+              {isMarkingAll ? (
+                <LoaderCircle
+                  size={18}
+                  className="animate-spin"
+                />
+              ) : (
+                <CheckCheck size={18} />
+              )}
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-[#66729b] hover:bg-[#f2f4f8]"
+            onClick={() => setIsOpen(false)}
+            aria-label="Close notifications"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      </div>
+
+      {menuError && (
+        <p
+          className="mx-4 mt-4 shrink-0 rounded-xl bg-[#fff0ed] px-4 py-3 text-sm font-semibold text-[#b42318]"
+          role="alert"
+        >
+          {menuError}
+        </p>
+      )}
+
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {isLoading ? (
+          <div className="flex min-h-44 items-center justify-center">
+            <LoaderCircle
+              size={28}
+              className="animate-spin text-[#1379f4]"
+            />
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <Bell
+              size={34}
+              className="mx-auto text-[#a3afc7]"
+            />
+
+            <h3 className="mt-4 font-extrabold text-[#07143f]">
+              No notifications yet
+            </h3>
+
+            <p className="mt-2 text-sm leading-6 text-[#66729b]">
+              Assessment updates and action reminders will
+              appear here.
+            </p>
+          </div>
+        ) : (
+          notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className={`group flex cursor-pointer gap-3 border-b border-[#edf0f5] px-4 py-4 transition last:border-b-0 hover:bg-[#f8faff] ${
+                notification.is_read
+                  ? "bg-white"
+                  : "bg-[#eef5ff]"
+              }`}
+              role="button"
+              tabIndex={0}
+              onClick={() =>
+                void openNotification(notification)
+              }
+              onKeyDown={(event) => {
+                if (
+                  event.key === "Enter" ||
+                  event.key === " "
+                ) {
+                  event.preventDefault();
+                  void openNotification(notification);
+                }
+              }}
+            >
+              <span
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                  notification.notification_type ===
+                  "participant_completed"
+                    ? "bg-[#eaf5ff] text-[#1379f4]"
+                    : notification.notification_type ===
+                        "report_ready"
+                      ? "bg-[#e8f8ef] text-[#10a968]"
+                      : "bg-[#fff0ed] text-[#ff5d49]"
+                }`}
+              >
+                <NotificationIcon
+                  type={notification.notification_type}
+                />
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start gap-2">
+                  <h3 className="flex-1 text-sm font-extrabold leading-5 text-[#07143f]">
+                    {notification.title}
+                  </h3>
+
+                  {!notification.is_read && (
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#1379f4]" />
+                  )}
+                </div>
+
+                <p className="mt-1 break-words text-sm leading-5 text-[#66729b]">
+                  {notification.message}
+                </p>
+
+                <p className="mt-2 text-xs font-semibold text-[#8a95ad]">
+                  {formatNotificationTime(
+                    notification.created_at,
+                  )}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#8a95ad] opacity-100 transition hover:bg-[#fff0ed] hover:text-[#b42318] sm:opacity-0 sm:group-hover:opacity-100"
+                onClick={(event) =>
+                  void removeNotification(
+                    event,
+                    notification.id,
+                  )
+                }
+                disabled={deletingId === notification.id}
+                aria-label="Delete notification"
+              >
+                {deletingId === notification.id ? (
+                  <LoaderCircle
+                    size={16}
+                    className="animate-spin"
+                  />
+                ) : (
+                  <Trash2 size={16} />
+                )}
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="relative" ref={menuRef}>
+    <div ref={buttonContainerRef}>
       <button
         type="button"
         className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#dfe6f1] bg-white text-[#52617e] transition hover:bg-[#eef5ff] hover:text-[#1379f4]"
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={() =>
+          setIsOpen((currentValue) => !currentValue)
+        }
         aria-label="Open notifications"
         aria-expanded={isOpen}
       >
@@ -243,177 +467,8 @@ export function NotificationMenu() {
         )}
       </button>
 
-      {isOpen && (
-        <div className="absolute right-0 top-12 z-50 w-[calc(100vw-2rem)] max-w-[390px] overflow-hidden rounded-2xl border border-[#dfe6f1] bg-white shadow-[0_22px_60px_rgba(7,20,63,.18)]">
-          <div className="flex items-center justify-between border-b border-[#e4e9f2] px-5 py-4">
-            <div>
-              <h2 className="font-extrabold text-[#07143f]">
-                Notifications
-              </h2>
-
-              <p className="mt-1 text-xs text-[#66729b]">
-                {unreadCount === 0
-                  ? "You’re all caught up"
-                  : `${unreadCount} unread notification${
-                      unreadCount === 1 ? "" : "s"
-                    }`}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-1">
-              {unreadCount > 0 && (
-                <button
-                  type="button"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-[#1379f4] hover:bg-[#eef5ff] disabled:opacity-50"
-                  onClick={() => void markAllAsRead()}
-                  disabled={isMarkingAll}
-                  aria-label="Mark all notifications as read"
-                  title="Mark all as read"
-                >
-                  {isMarkingAll ? (
-                    <LoaderCircle
-                      size={18}
-                      className="animate-spin"
-                    />
-                  ) : (
-                    <CheckCheck size={18} />
-                  )}
-                </button>
-              )}
-
-              <button
-                type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-[#66729b] hover:bg-[#f2f4f8]"
-                onClick={() => setIsOpen(false)}
-                aria-label="Close notifications"
-              >
-                <X size={18} />
-              </button>
-            </div>
-          </div>
-
-          {menuError && (
-            <p
-              className="mx-4 mt-4 rounded-xl bg-[#fff0ed] px-4 py-3 text-sm font-semibold text-[#b42318]"
-              role="alert"
-            >
-              {menuError}
-            </p>
-          )}
-
-          <div className="max-h-[430px] overflow-y-auto">
-            {isLoading ? (
-              <div className="flex min-h-44 items-center justify-center">
-                <LoaderCircle
-                  size={28}
-                  className="animate-spin text-[#1379f4]"
-                />
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="px-6 py-12 text-center">
-                <Bell
-                  size={34}
-                  className="mx-auto text-[#a3afc7]"
-                />
-
-                <h3 className="mt-4 font-extrabold text-[#07143f]">
-                  No notifications yet
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-[#66729b]">
-                  Assessment updates and action reminders will appear
-                  here.
-                </p>
-              </div>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`group flex cursor-pointer gap-3 border-b border-[#edf0f5] px-4 py-4 transition last:border-b-0 hover:bg-[#f8faff] ${
-                    notification.is_read
-                      ? "bg-white"
-                      : "bg-[#eef5ff]"
-                  }`}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() =>
-                    void openNotification(notification)
-                  }
-                  onKeyDown={(event) => {
-                    if (
-                      event.key === "Enter" ||
-                      event.key === " "
-                    ) {
-                      event.preventDefault();
-                      void openNotification(notification);
-                    }
-                  }}
-                >
-                  <span
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                      notification.notification_type ===
-                      "participant_completed"
-                        ? "bg-[#eaf5ff] text-[#1379f4]"
-                        : notification.notification_type ===
-                            "report_ready"
-                          ? "bg-[#e8f8ef] text-[#10a968]"
-                          : "bg-[#fff0ed] text-[#ff5d49]"
-                    }`}
-                  >
-                    <NotificationIcon
-                      type={notification.notification_type}
-                    />
-                  </span>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start gap-2">
-                      <h3 className="flex-1 text-sm font-extrabold leading-5 text-[#07143f]">
-                        {notification.title}
-                      </h3>
-
-                      {!notification.is_read && (
-                        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#1379f4]" />
-                      )}
-                    </div>
-
-                    <p className="mt-1 text-sm leading-5 text-[#66729b]">
-                      {notification.message}
-                    </p>
-
-                    <p className="mt-2 text-xs font-semibold text-[#8a95ad]">
-                      {formatNotificationTime(
-                        notification.created_at,
-                      )}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#8a95ad] opacity-100 transition hover:bg-[#fff0ed] hover:text-[#b42318] sm:opacity-0 sm:group-hover:opacity-100"
-                    onClick={(event) =>
-                      void removeNotification(
-                        event,
-                        notification.id,
-                      )
-                    }
-                    disabled={deletingId === notification.id}
-                    aria-label="Delete notification"
-                  >
-                    {deletingId === notification.id ? (
-                      <LoaderCircle
-                        size={16}
-                        className="animate-spin"
-                      />
-                    ) : (
-                      <Trash2 size={16} />
-                    )}
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
+      {isOpen &&
+        createPortal(notificationPanel, document.body)}
     </div>
   );
 }

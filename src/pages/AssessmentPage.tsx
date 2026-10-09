@@ -130,7 +130,8 @@ export function AssessmentsPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <button
+     <div>
+       <button
         type="button"
         onClick={() => navigate("/dashboard")}
         className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-[#1379f4] transition hover:text-[#0a4fb8]"
@@ -138,6 +139,7 @@ export function AssessmentsPage() {
         <ArrowLeft size={18} />
         Back to dashboard
       </button>
+     </div>
 
       <span className="eyebrow">Assessments</span>
 
