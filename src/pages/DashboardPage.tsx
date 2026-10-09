@@ -268,6 +268,42 @@ function getHealthLabel(score: number) {
 
 }
 
+function getScoreMeaning(score: number) {
+  if (score >= 80) {
+    return {
+      label: "Working very well",
+      description:
+        "Most responses show a consistently positive experience.",
+      badgeClass: "bg-[#e8f8ef] text-[#168236]",
+    };
+  }
+
+  if (score >= 60) {
+    return {
+      label: "Generally working",
+      description:
+        "This area is doing fairly well, with some room to improve.",
+      badgeClass: "bg-[#fff4cf] text-[#8c6500]",
+    };
+  }
+
+  if (score >= 40) {
+    return {
+      label: "Needs improvement",
+      description:
+        "Responses show noticeable issues that should be addressed.",
+      badgeClass: "bg-[#fff0ed] text-[#d94735]",
+    };
+  }
+
+  return {
+    label: "Needs attention first",
+    description:
+      "Responses show that this area requires immediate attention.",
+    badgeClass: "bg-[#fff0ed] text-[#b42318]",
+  };
+}
+
 
 
 function getLargestGapCopy(
@@ -525,27 +561,21 @@ function DesktopAreaChart({
   return (
 
     <section className="rounded-[18px] border border-[#dce5f1] bg-white p-5 shadow-[0_8px_24px_rgba(7,20,63,.05)]">
+<h2 className="text-xl font-black text-[#07143f]">
+  How each group experiences your business
+</h2>
 
-      <h2 className="text-xl font-black text-[#07143f]">
+<p className="mt-1 max-w-3xl text-sm leading-6 text-[#687ca9]">
+  Each bar shows a rating out of 100. A taller bar means a more
+  positive experience. The distance between the bars shows how
+  differently the owner, customers and employees see that area.
+</p>
 
-        Where perspectives differ
-
-      </h2>
-
-
-
-      <p className="mt-1 text-sm text-[#687ca9]">
-
-        The same business. Different perspectives.
-
-        Understand where views align—and where they
-
-        don’t.
-
-      </p>
-
-
-
+<div className="mt-4 rounded-xl bg-[#eef5ff] px-4 py-3 text-sm leading-6 text-[#25427f]">
+  <strong>How to read it:</strong> Bars that are close together mean
+  people generally agree. Bars that are far apart show a perspective
+  gap that may need attention.
+</div>
       <div className="mt-6 grid grid-cols-4 gap-4 border-b border-[#dfe6f1] px-2">
 
         {areaScores.map((areaScore) => {
@@ -598,7 +628,7 @@ function DesktopAreaChart({
 
                 <span className="absolute inset-x-0 top-0 text-center text-xs font-extrabold text-[#ff4f45]">
 
-                  {areaScore.gap_score_100}-point gap
+                 Views differ by {areaScore.gap_score_100} points
 
                 </span>
 
@@ -1266,19 +1296,17 @@ export function DashboardPage() {
 
 
 
-  const largestGapPoints =
+ const largestGapPoints =
+  dashboard.largest_gap
+    ? Math.round(
+        dashboard.largest_gap.gap_score * 20,
+      )
+    : 0;
 
-    dashboard.largest_gap
-
-      ? Math.round(
-
-          dashboard.largest_gap.gap_score * 20,
-
-        )
-
-      : 0;
-
-
+const evidenceRecommendationPath =
+  dashboard.largest_gap?.business_area
+    ? `/recommendations#recommendation-${dashboard.largest_gap.business_area}`
+    : "/recommendations";
 
   const displayedActions =
 
@@ -1612,13 +1640,13 @@ export function DashboardPage() {
 
         <article className="rounded-[18px] border border-[#dce5f1] bg-white p-5 shadow-[0_8px_24px_rgba(7,20,63,.05)]">
 
-          <h2 className="text-lg font-black text-[#07143f]">
+       <h2 className="text-lg font-black text-[#07143f]">
+  Overall business picture
+</h2>
 
-            Business Health
-
-          </h2>
-
-
+<p className="mt-1 text-xs leading-5 text-[#687ca9]">
+  Average of all four business areas
+</p>
 
           <div className="mt-5 flex items-center justify-between gap-4">
 
@@ -1631,12 +1659,9 @@ export function DashboardPage() {
               </strong>
 
 
-
-              <span className="mb-1 ml-1 text-2xl font-semibold text-[#8293ba]">
-
-                /100
-
-              </span>
+<span className="mb-1 ml-1 text-sm font-semibold text-[#8293ba]">
+  out of 100
+</span>
 
             </div>
 
@@ -1693,7 +1718,10 @@ export function DashboardPage() {
 
 
             const Icon = style.icon;
-
+             
+            const scoreMeaning = getScoreMeaning(
+  areaScore.combined_score_100,
+);
 
 
             return (
@@ -1758,28 +1786,29 @@ export function DashboardPage() {
 
 
 
-                <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#edf1f7]">
+              <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#edf1f7]">
+  <div
+    className={`h-full rounded-full ${style.barColor}`}
+    style={{
+      width: `${Math.min(
+        areaScore.combined_score_100,
+        100,
+      )}%`,
+    }}
+  />
+</div>
 
-                  <div
+<div className="mt-4">
+  <span
+    className={`inline-flex rounded-full px-3 py-1 text-xs font-extrabold ${scoreMeaning.badgeClass}`}
+  >
+    {scoreMeaning.label}
+  </span>
 
-                    className={`h-full rounded-full ${style.barColor}`}
-
-                    style={{
-
-                      width: `${Math.min(
-
-                        areaScore.combined_score_100,
-
-                        100,
-
-                      )}%`,
-
-                    }}
-
-                  />
-
-                </div>
-
+  <p className="mt-2 text-xs leading-5 text-[#687ca9]">
+    {scoreMeaning.description}
+  </p>
+</div>
               </article>
 
             );
@@ -1812,19 +1841,21 @@ export function DashboardPage() {
 
 
 
-              const Icon = style.icon;
+             const Icon = style.icon;
 
+const scoreMeaning = getScoreMeaning(
+  areaScore.combined_score_100,
+);
 
+const badge = getAreaBadge(
+  areaScore,
+  strongestArea,
+  dashboard.largest_gap,
+);
 
-              const badge = getAreaBadge(
-
-                areaScore,
-
-                strongestArea,
-
-                dashboard.largest_gap,
-
-              );
+const showComparisonBadge =
+  badge === "Strongest area" ||
+  badge === "Largest gap";
 
 
 
@@ -1914,16 +1945,25 @@ export function DashboardPage() {
 
 
 
-                      <span
+                  <div className="mt-3 flex flex-wrap gap-2">
+  {showComparisonBadge && (
+    <span
+      className={`inline-flex rounded-full px-4 py-1 text-xs font-bold ${style.badgeBackground} ${style.badgeColor}`}
+    >
+      {badge}
+    </span>
+  )}
 
-                        className={`mt-3 inline-flex rounded-full px-4 py-1 text-xs font-bold ${style.badgeBackground} ${style.badgeColor}`}
+  <span
+    className={`inline-flex rounded-full px-4 py-1 text-xs font-extrabold ${scoreMeaning.badgeClass}`}
+  >
+    {scoreMeaning.label}
+  </span>
+</div>
 
-                      >
-
-                        {badge}
-
-                      </span>
-
+<p className="mt-2 text-xs leading-5 text-[#687ca9]">
+  {scoreMeaning.description}
+</p>
                     </div>
 
                   </div>
@@ -2008,19 +2048,13 @@ export function DashboardPage() {
 
 
 
-          <Link
-
-            to="/reports"
-
-            className="mt-7 inline-flex items-center gap-3 rounded-xl bg-[#ff5d49] px-6 py-3 font-extrabold text-white transition hover:bg-[#e84632]"
-
-          >
-
-            See evidence
-
-            <ArrowRight size={18} />
-
-          </Link>
+        <Link
+  to={evidenceRecommendationPath}
+  className="mt-7 inline-flex items-center gap-3 rounded-xl bg-[#ff5d49] px-6 py-3 font-extrabold text-white transition hover:bg-[#e84632]"
+>
+  See evidence
+  <ArrowRight size={18} />
+</Link>
 
         </aside>
 
@@ -2149,18 +2183,12 @@ export function DashboardPage() {
 
 
         <Link
-
-          to="/reports"
-
-          className="mt-5 inline-flex items-center gap-2 font-extrabold text-[#1266e8]"
-
-        >
-
-          Explore the evidence
-
-          <ArrowRight size={18} />
-
-        </Link>
+  to={evidenceRecommendationPath}
+  className="mt-5 inline-flex items-center gap-2 font-extrabold text-[#1266e8]"
+>
+  Explore the evidence
+  <ArrowRight size={18} />
+</Link>
 
       </section>
 

@@ -25,10 +25,7 @@ function formatArea(area: string | null) {
 
   return area
     .split("_")
-    .map(
-      (word) =>
-        word.charAt(0).toUpperCase() + word.slice(1),
-    )
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
@@ -55,9 +52,7 @@ function summariseAction(value: string) {
   const sentenceEnd = cleanValue.search(/[.!?](\s|$)/);
 
   const firstSentence =
-    sentenceEnd >= 0
-      ? cleanValue.slice(0, sentenceEnd + 1)
-      : cleanValue;
+    sentenceEnd >= 0 ? cleanValue.slice(0, sentenceEnd + 1) : cleanValue;
 
   if (firstSentence.length <= 180) {
     return firstSentence;
@@ -67,19 +62,16 @@ function summariseAction(value: string) {
 }
 
 export function RecommendationsPage() {
-  const [overview, setOverview] =
-    useState<DashboardOverview | null>(null);
+  const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [pageError, setPageError] =
-    useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
     const loadRecommendations = async () => {
       try {
-        const dashboardOverview =
-          await getDashboardOverview();
+        const dashboardOverview = await getDashboardOverview();
 
         if (isMounted) {
           setOverview(dashboardOverview);
@@ -105,6 +97,29 @@ export function RecommendationsPage() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (isLoading || !overview?.analysis) {
+      return;
+    }
+
+    const targetId = decodeURIComponent(window.location.hash.slice(1));
+
+    if (!targetId.startsWith("recommendation-")) {
+      return;
+    }
+
+    const animationFrameId = window.requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+    };
+  }, [isLoading, overview]);
 
   if (isLoading) {
     return (
@@ -135,8 +150,7 @@ export function RecommendationsPage() {
           </h1>
 
           <p className="mt-2 text-[#66729b]">
-            {pageError ??
-              "No recommendation data was returned."}
+            {pageError ?? "No recommendation data was returned."}
           </p>
 
           <button
@@ -163,25 +177,18 @@ export function RecommendationsPage() {
         </Link>
 
         <div className="card p-8 text-center">
-          <Lightbulb
-            size={38}
-            className="mx-auto text-[#ff5d49]"
-          />
+          <Lightbulb size={38} className="mx-auto text-[#ff5d49]" />
 
           <h1 className="mt-5 text-2xl font-extrabold">
             Your recommendations are not ready yet
           </h1>
 
           <p className="mx-auto mt-3 max-w-xl leading-7 text-[#66729b]">
-            Complete the required assessment perspectives first.
-            GrowthLens will analyse the responses and prepare
-            practical recommendations.
+            Complete the required assessment perspectives first. GrowthLens will
+            analyse the responses and prepare practical recommendations.
           </p>
 
-          <Link
-            to="/assessments"
-            className="btn-primary mt-6"
-          >
+          <Link to="/assessments" className="btn-primary mt-6">
             Go to assessment
           </Link>
         </div>
@@ -199,8 +206,8 @@ export function RecommendationsPage() {
   const startingPoint = recommendations[0] ?? null;
 
   const startingPointSummary = startingPoint
-  ? summariseAction(startingPoint.action)
-  : "";
+    ? summariseAction(startingPoint.action)
+    : "";
 
   return (
     <div className="mx-auto max-w-[1180px] text-[#07143f]">
@@ -230,8 +237,8 @@ export function RecommendationsPage() {
           </h1>
 
           <p className="mt-3 max-w-3xl text-base leading-7 text-[#526fba] sm:text-lg">
-            Review the suggested actions, understand why they
-            matter and decide what your business should do next.
+            Review the suggested actions, understand why they matter and decide
+            what your business should do next.
           </p>
         </div>
 
@@ -245,13 +252,10 @@ export function RecommendationsPage() {
       </header>
 
       <section className="mt-7 rounded-[18px] border border-[#cbd9ef] bg-white p-5 shadow-[0_10px_35px_rgba(37,66,127,.04)] sm:p-7">
-       <div className="grid min-w-0 gap-6 2xl:grid-cols-[minmax(0,1fr)_430px] 2xl:items-center">
+        <div className="grid min-w-0 gap-6 2xl:grid-cols-[minmax(0,1fr)_430px] 2xl:items-center">
           <div>
             <div className="flex items-center gap-3">
-              <Sparkles
-                size={24}
-                className="shrink-0 text-[#ff5d49]"
-              />
+              <Sparkles size={24} className="shrink-0 text-[#ff5d49]" />
 
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#315aa8] sm:text-sm">
                 AI-suggested starting point
@@ -263,19 +267,16 @@ export function RecommendationsPage() {
                 <h2 className="mt-4 text-xl font-black sm:text-2xl">
                   {startingPoint.title}
                 </h2>
-<p className="mt-3 max-w-2xl leading-7 text-[#526fba]">
-  {startingPointSummary}
-</p>
+                <p className="mt-3 max-w-2xl leading-7 text-[#526fba]">
+                  {startingPointSummary}
+                </p>
 
                 <div className="mt-4 flex items-start gap-2 text-sm text-[#526fba]">
-                  <Info
-                    size={19}
-                    className="mt-0.5 shrink-0"
-                  />
+                  <Info size={19} className="mt-0.5 shrink-0" />
 
                   <p>
-                    These are suggestions based on your report.
-                    Nothing is started automatically.
+                    These are suggestions based on your report. Nothing is
+                    started automatically.
                   </p>
                 </div>
               </>
@@ -286,7 +287,7 @@ export function RecommendationsPage() {
             )}
           </div>
 
-        <div className="grid min-w-0 gap-3 sm:grid-cols-3">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-3">
             <div className="flex items-center gap-3 rounded-2xl bg-[#f6f8fc] p-4">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#eaf0fa] text-lg font-black">
                 {recommendations.length}
@@ -325,9 +326,7 @@ export function RecommendationsPage() {
           <Target className="text-[#1379f4]" />
 
           <div>
-            <h2 className="text-2xl font-black">
-              Suggested actions
-            </h2>
+            <h2 className="text-2xl font-black">Suggested actions</h2>
 
             <p className="mt-1 text-sm text-[#66729b]">
               Practical next steps based on your latest report.
@@ -337,182 +336,178 @@ export function RecommendationsPage() {
 
         {recommendations.length === 0 ? (
           <div className="mt-6 rounded-2xl border border-dashed border-[#cbd9ef] p-8 text-center">
-            <CircleAlert
-              size={30}
-              className="mx-auto text-[#ff5d49]"
-            />
+            <CircleAlert size={30} className="mx-auto text-[#ff5d49]" />
 
             <h3 className="mt-4 text-lg font-extrabold">
               No recommendations available
             </h3>
 
             <p className="mt-2 text-sm text-[#66729b]">
-              Your analysis is complete, but no recommended
-              actions were returned.
+              Your analysis is complete, but no recommended actions were
+              returned.
             </p>
           </div>
         ) : (
-         <div className="mt-6 grid gap-5">
-  {recommendations.map((recommendation, index) => {
-    const style = getRecommendationStyle(index);
+          <div className="mt-6 grid gap-5">
+            {recommendations.map((recommendation, index) => {
+              const style = getRecommendationStyle(index);
 
-    const relatedGap =
-      analysis.priority_gaps?.find(
-        (gap) => gap.area === recommendation.area,
-      ) ??
-      analysis.priority_gaps?.[index] ??
-      null;
+              const relatedGap =
+                analysis.priority_gaps?.find(
+                  (gap) => gap.area === recommendation.area,
+                ) ??
+                analysis.priority_gaps?.[index] ??
+                null;
 
-    const draftingQuestion = encodeURIComponent(
-      `Help me prepare what I need to carry out this recommendation: "${recommendation.title}". The recommended action is: ${recommendation.action}. Please create a practical draft suitable for my business.`,
-    );
+              const draftingQuestion = encodeURIComponent(
+                `Help me prepare what I need to carry out this recommendation: "${recommendation.title}". The recommended action is: ${recommendation.action}. Please create a practical draft suitable for my business.`,
+              );
 
-    return (
-      <article
-        key={`${recommendation.area}-${recommendation.title}-${index}`}
-        className="overflow-hidden rounded-[20px] border border-[#d8e1ef] bg-white"
-      >
-        <div className="border-b border-[#e4e9f2] bg-[#f9fbff] px-5 py-5 sm:px-7">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-            <div className="flex min-w-0 items-start gap-4">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf2fa] text-lg font-black text-[#07143f]">
-                {index + 1}
-              </span>
+              return (
+                <article
+                  id={`recommendation-${recommendation.area}`}
+                  key={`${recommendation.area}-${recommendation.title}-${index}`}
+                  className="scroll-mt-28 overflow-hidden rounded-[20px] border border-[#d8e1ef] bg-white transition target:border-[#ff5d49] target:ring-4 target:ring-[#ff5d49]/10"
+                >
+                  <div className="border-b border-[#e4e9f2] bg-[#f9fbff] px-5 py-5 sm:px-7">
+                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+                      <div className="flex min-w-0 items-start gap-4">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf2fa] text-lg font-black text-[#07143f]">
+                          {index + 1}
+                        </span>
 
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-extrabold ${style.className}`}
-                  >
-                    {style.label}
-                  </span>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-extrabold ${style.className}`}
+                            >
+                              {style.label}
+                            </span>
 
-                  <span className="rounded-full bg-[#eef5ff] px-3 py-1 text-xs font-extrabold text-[#315aa8]">
-                    {formatArea(recommendation.area)}
-                  </span>
-                </div>
+                            <span className="rounded-full bg-[#eef5ff] px-3 py-1 text-xs font-extrabold text-[#315aa8]">
+                              {formatArea(recommendation.area)}
+                            </span>
+                          </div>
 
-                <h3 className="mt-3 text-xl font-black leading-snug text-[#07143f] sm:text-2xl">
-                  {recommendation.title}
-                </h3>
-              </div>
-            </div>
+                          <h3 className="mt-3 text-xl font-black leading-snug text-[#07143f] sm:text-2xl">
+                            {recommendation.title}
+                          </h3>
+                        </div>
+                      </div>
 
-            <div className="flex shrink-0 flex-wrap gap-2 text-xs font-bold">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-[#52617e] shadow-sm">
-                <Clock3 size={14} />
-                {recommendation.timeframe}
-              </span>
+                      <div className="flex shrink-0 flex-wrap gap-2 text-xs font-bold">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-[#52617e] shadow-sm">
+                          <Clock3 size={14} />
+                          {recommendation.timeframe}
+                        </span>
 
-              <span className="rounded-full bg-white px-3 py-2 capitalize text-[#52617e] shadow-sm">
-                {recommendation.effort} effort
-              </span>
-            </div>
+                        <span className="rounded-full bg-white px-3 py-2 capitalize text-[#52617e] shadow-sm">
+                          {recommendation.effort} effort
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-5 p-5 sm:p-7 xl:grid-cols-2">
+                    <section className="rounded-2xl border border-[#d8e1ef] bg-white p-5">
+                      <p className="text-xs font-black uppercase tracking-[0.12em] text-[#315aa8]">
+                        What the assessment found
+                      </p>
+
+                      {relatedGap ? (
+                        <>
+                          <h4 className="mt-3 text-lg font-extrabold text-[#07143f]">
+                            {relatedGap.title}
+                          </h4>
+
+                          <p className="mt-3 text-sm leading-7 text-[#52617e]">
+                            {relatedGap.evidence}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="mt-3 text-sm leading-7 text-[#52617e]">
+                          This recommendation was generated from the results and
+                          perspective differences identified in your latest
+                          assessment.
+                        </p>
+                      )}
+                    </section>
+
+                    <section className="rounded-2xl border border-[#f2d2cd] bg-[#fff8f6] p-5">
+                      <p className="text-xs font-black uppercase tracking-[0.12em] text-[#b42318]">
+                        Why this matters
+                      </p>
+
+                      <p className="mt-3 text-sm leading-7 text-[#52617e]">
+                        {relatedGap?.why_it_matters ||
+                          recommendation.reason ||
+                          "Addressing this area can improve consistency and strengthen the experience your business provides."}
+                      </p>
+                    </section>
+                  </div>
+
+                  <div className="mx-5 mb-5 rounded-2xl bg-[#f3f7fd] p-5 sm:mx-7 sm:mb-7 sm:p-6">
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1379f4] text-white">
+                        <Lightbulb size={20} />
+                      </span>
+
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.12em] text-[#315aa8]">
+                          What to do next
+                        </p>
+
+                        <p className="mt-2 leading-7 text-[#25427f]">
+                          {recommendation.action}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {recommendation.reason &&
+                    recommendation.reason !== relatedGap?.why_it_matters && (
+                      <div className="mx-5 mb-5 border-t border-[#e4e9f2] pt-5 sm:mx-7 sm:mb-7">
+                        <p className="text-xs font-black uppercase tracking-[0.12em] text-[#66729b]">
+                          Expected benefit
+                        </p>
+
+                        <p className="mt-2 text-sm leading-7 text-[#52617e]">
+                          {recommendation.reason}
+                        </p>
+                      </div>
+                    )}
+
+                  <div className="flex flex-col gap-3 border-t border-[#e4e9f2] bg-[#fcfdff] px-5 py-5 sm:flex-row sm:items-center sm:justify-end sm:px-7">
+                    <Link
+                      to={`/advisor?question=${draftingQuestion}`}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1379f4] bg-white px-4 py-3 text-sm font-extrabold text-[#1379f4] transition hover:bg-[#eef5ff]"
+                    >
+                      <MessageSquareText size={17} />
+                      Help me draft this
+                    </Link>
+
+                    <Link
+                      to={`/actions?recommendation=${index}`}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ff5d49] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#e84632]"
+                    >
+                      Track this action
+                      <ArrowRight size={17} />
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
           </div>
-        </div>
-
-        <div className="grid gap-5 p-5 sm:p-7 xl:grid-cols-2">
-          <section className="rounded-2xl border border-[#d8e1ef] bg-white p-5">
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#315aa8]">
-              What the assessment found
-            </p>
-
-            {relatedGap ? (
-              <>
-                <h4 className="mt-3 text-lg font-extrabold text-[#07143f]">
-                  {relatedGap.title}
-                </h4>
-
-                <p className="mt-3 text-sm leading-7 text-[#52617e]">
-                  {relatedGap.evidence}
-                </p>
-              </>
-            ) : (
-              <p className="mt-3 text-sm leading-7 text-[#52617e]">
-                This recommendation was generated from the results and
-                perspective differences identified in your latest
-                assessment.
-              </p>
-            )}
-          </section>
-
-          <section className="rounded-2xl border border-[#f2d2cd] bg-[#fff8f6] p-5">
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#b42318]">
-              Why this matters
-            </p>
-
-            <p className="mt-3 text-sm leading-7 text-[#52617e]">
-              {relatedGap?.why_it_matters ||
-                recommendation.reason ||
-                "Addressing this area can improve consistency and strengthen the experience your business provides."}
-            </p>
-          </section>
-        </div>
-
-        <div className="mx-5 mb-5 rounded-2xl bg-[#f3f7fd] p-5 sm:mx-7 sm:mb-7 sm:p-6">
-          <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1379f4] text-white">
-              <Lightbulb size={20} />
-            </span>
-
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-[#315aa8]">
-                What to do next
-              </p>
-
-              <p className="mt-2 leading-7 text-[#25427f]">
-                {recommendation.action}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {recommendation.reason &&
-          recommendation.reason !== relatedGap?.why_it_matters && (
-            <div className="mx-5 mb-5 border-t border-[#e4e9f2] pt-5 sm:mx-7 sm:mb-7">
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-[#66729b]">
-                Expected benefit
-              </p>
-
-              <p className="mt-2 text-sm leading-7 text-[#52617e]">
-                {recommendation.reason}
-              </p>
-            </div>
-          )}
-
-        <div className="flex flex-col gap-3 border-t border-[#e4e9f2] bg-[#fcfdff] px-5 py-5 sm:flex-row sm:items-center sm:justify-end sm:px-7">
-          <Link
-            to={`/advisor?question=${draftingQuestion}`}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1379f4] bg-white px-4 py-3 text-sm font-extrabold text-[#1379f4] transition hover:bg-[#eef5ff]"
-          >
-            <MessageSquareText size={17} />
-            Help me draft this
-          </Link>
-
-          <Link
-            to={`/actions?recommendation=${index}`}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ff5d49] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#e84632]"
-          >
-            Track this action
-            <ArrowRight size={17} />
-          </Link>
-        </div>
-      </article>
-    );
-  })}
-</div>
         )}
       </section>
 
       <section className="mt-5 flex flex-col justify-between gap-5 rounded-[18px] bg-[#07143f] p-6 text-white sm:flex-row sm:items-center sm:p-7">
         <div>
-          <h2 className="text-2xl font-black">
-            Ready to track your progress?
-          </h2>
+          <h2 className="text-2xl font-black">Ready to track your progress?</h2>
 
           <p className="mt-2 max-w-2xl leading-7 text-blue-100">
-            Open your action plan to set dates, update statuses and
-            keep notes about what you learn.
+            Open your action plan to set dates, update statuses and keep notes
+            about what you learn.
           </p>
         </div>
 
