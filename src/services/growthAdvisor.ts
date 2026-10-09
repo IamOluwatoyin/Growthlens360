@@ -1,18 +1,18 @@
 import { supabase } from "../lib/supabase";
 
-export type GrowthAdvisorHistoryMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
-
 type GrowthAdvisorResponse = {
   answer?: string;
   message?: string;
 };
 
+export type GrowthAdvisorHistoryMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 export async function askGrowthAdvisor(
   question: string,
-  history: GrowthAdvisorHistoryMessage[] = [],
+  conversationHistory: GrowthAdvisorHistoryMessage[] = [],
 ): Promise<string> {
   const cleanQuestion = question.trim();
 
@@ -30,7 +30,7 @@ export async function askGrowthAdvisor(
   }
 
   const {
-    data: { session },
+    data: { session: currentSession },
     error: sessionError,
   } = await supabase.auth.getSession();
 
@@ -38,15 +38,38 @@ export async function askGrowthAdvisor(
     throw sessionError;
   }
 
-  if (!session?.access_token) {
+  if (!currentSession) {
     throw new Error(
       "Your session has expired. Please log in again.",
     );
   }
 
-  const recentHistory = history
-    .filter((message) => message.content.trim())
-    .slice(-10);
+  let session = currentSession;
+
+  const expiresSoon =
+    !session.expires_at ||
+    session.expires_at * 1000 <= Date.now() + 60_000;
+
+  if (expiresSoon) {
+    const {
+      data: { session: refreshedSession },
+      error: refreshError,
+    } = await supabase.auth.refreshSession();
+
+    if (refreshError) {
+      throw new Error(
+        "Your session could not be refreshed. Please log in again.",
+      );
+    }
+
+    if (!refreshedSession) {
+      throw new Error(
+        "Your session has expired. Please log in again.",
+      );
+    }
+
+    session = refreshedSession;
+  }
 
   const response = await fetch(webhookUrl, {
     method: "POST",
@@ -56,7 +79,7 @@ export async function askGrowthAdvisor(
     },
     body: JSON.stringify({
       question: cleanQuestion,
-      history: recentHistory,
+      conversation_history: conversationHistory,
     }),
   });
 
