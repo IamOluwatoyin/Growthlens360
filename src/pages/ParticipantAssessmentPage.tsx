@@ -240,7 +240,13 @@ export function ParticipantAssessmentPage() {
 
   const selectedAnswer = answers[currentQuestion.id];
   const isLastQuestion = currentIndex === questions.length - 1;
-  const progress = Math.round(((currentIndex + 1) / questions.length) * 100);
+  const answeredCount = questions.filter(
+  (question) => Boolean(answers[question.id]),
+).length;
+
+const progress = questions.length
+  ? Math.round((answeredCount / questions.length) * 100)
+  : 0;
   const isEmployee = assessment.participant_type === "employee";
 
   const handleNext = async () => {
